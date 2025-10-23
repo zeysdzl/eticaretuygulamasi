@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Uygulamanın ana teması. AndroidManifest.xml bu temayı kullanır. -->
+    <style name="Theme.EticaretUygulamasi" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/koyu_pembe</item>
+    </style>
+</resources>
