@@ -2,14 +2,14 @@ package com.zsd.eticaretuygulamasi.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Pink80 = Color(0xFFEFB8C8)
-val PinkGrey80 = Color(0xFFCCC2DC)
-val Purple80 = Color(0xFFD0BCFF)
+val PinkLight = Color(0xFFF2B6BB)
+val PinkMediumLight = Color(0xFFF2ACB9)
+val PinkMedium = Color(0xFFF299B1)
+val PinkStrong = Color(0xFFF285AD)
+val DarkPlum = Color(0xFF593B46)
 
-val Pink40 = Color(0xFF7D5260)
-val PinkGrey40 = Color(0xFF625b71)
-val Purple40 = Color(0xFF6650a4)
-
-val SoftPink = Color(0xFFFFE4E1)
-val DeepPink = Color(0xFFE91E63)
-val Black = Color.Black
+val PinkLight_Dark = Color(0xFFF2B6BB)
+val PinkMediumLight_Dark = Color(0xFFF2ACB9)
+val PinkMedium_Dark = Color(0xFFF299B1)
+val PinkStrong_Dark = Color(0xFFF285AD)
+val DarkPlum_Dark = Color(0xFF593B46)

@@ -2,143 +2,149 @@ package com.zsd.eticaretuygulamasi.ui.screens.anasayfa
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddShoppingCart
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.History
+
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect // LaunchedEffect importu
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
 import com.google.gson.Gson
+import com.zsd.eticaretuygulamasi.R
 import com.zsd.eticaretuygulamasi.data.entity.Urun
+import com.zsd.eticaretuygulamasi.ui.composables.RatingBar
+import com.zsd.eticaretuygulamasi.ui.composables.UrunKarti
 import com.zsd.eticaretuygulamasi.ui.screens.sepet_sayfa.SepetSayfaViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.border
+import androidx.compose.ui.text.TextStyle
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun Anasayfa(
     navController: NavController,
     viewModel: AnasayfaViewModel = hiltViewModel(),
-    sepetViewModel: SepetSayfaViewModel = hiltViewModel()
+    sepetViewModel: SepetSayfaViewModel
 ) {
     val urunListesi by viewModel.urunListesi.collectAsState()
-    val sepetListesi by sepetViewModel.sepetListesi.collectAsState()
-    val context = LocalContext.current
+    val searchQuery by viewModel.searchQuery.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Sayfa açıldığında veya SepetViewModel değiştiğinde sepeti yükle
     LaunchedEffect(Unit, sepetViewModel) {
         sepetViewModel.sepetiYukle()
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "Pembe Dükkan") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFFE4E1),
-                    titleContentColor = Color.Black,
-                    actionIconContentColor = Color.Black
-                ),
-                actions = {
-                    // Favoriler İkonu
-                    IconButton(onClick = { navController.navigate("favoriler_sayfa") }) {
-                        Icon(Icons.Filled.FavoriteBorder, contentDescription = "Favorilerim")
-                    }
-                    // Sepet İkonu ve Rozet
-                    BadgedBox(
-                        badge = {
-                            if (sepetListesi.isNotEmpty()) {
-                                Badge(
-                                    containerColor = Color(0xFFE91E63),
-                                    contentColor = Color.White
-                                ) {
-                                    Text("${sepetListesi.size}")
-                                }
-                            }
-                        }
-                    ) {
-                        IconButton(onClick = { navController.navigate("sepet_sayfa") }) {
-                            Icon(Icons.Filled.ShoppingCart, contentDescription = "Sepetim")
-                        }
-                    }
-                }
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        if (urunListesi.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.Info,
-                        contentDescription = "Bilgi",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(48.dp)
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item(span = { GridItemSpan(this.maxLineSpan) }) {
+                Image(
+                    painter = painterResource(id = R.drawable.pinkify_home),
+                    contentDescription = "Pinkify Logo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(37.dp)
+                        .padding(bottom = 3.dp),
+                    alignment = Alignment.Center
+                )
+            }
+
+            item(span = { GridItemSpan(this.maxLineSpan) }) {
+                Column {
+                    TopSection(
+                        navController = navController,
+                        searchQuery = searchQuery,
+                        onSearchQueryChanged = viewModel::onSearchQueryChanged
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Gösterilecek ürün bulunamadı.",
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
+                    BannerSection(navController = navController)
                 }
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    items = urunListesi,
-                    key = { urun -> urun.id }
-                ) { urun ->
+
+            if (urunListesi.isNotEmpty()) {
+                item(span = { GridItemSpan(this.maxLineSpan) }) {
+                    TitleRow(title = "Ürünler")
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+
+            if (urunListesi.isEmpty()) {
+                item(span = { GridItemSpan(this.maxLineSpan) }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Filled.Info,
+                                contentDescription = "Bilgi",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = if (searchQuery.isBlank()) "Gösterilecek ürün bulunamadı." else "Arama sonucu bulunamadı.",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(items = urunListesi, key = { urun -> urun.id }) { urun ->
                     UrunKarti(
                         urun = urun,
                         onSepeteEkle = { secilenUrun ->
                             viewModel.anasayfadanSepeteEkle(secilenUrun)
                             scope.launch {
-                                // Sepeti yenilemek için kısa bir gecikme sonrası yükleme
-                                kotlinx.coroutines.delay(300) // API işlemi için küçük bekleme
+                                kotlinx.coroutines.delay(300)
                                 sepetViewModel.sepetiYukle()
-                                snackbarHostState.showSnackbar(
-                                    message = "${secilenUrun.ad} sepete eklendi!",
-                                    duration = SnackbarDuration.Short
-                                )
+                                snackbarHostState.showSnackbar(message = "${secilenUrun.ad} sepete eklendi!", duration = SnackbarDuration.Short)
                             }
                         },
                         onUrunTikla = { secilenUrun ->
@@ -148,23 +154,8 @@ fun Anasayfa(
                             } catch (e: Exception){
                                 Log.e("Anasayfa", "Ürün JSON'a çevrilirken hata: ${e.message}")
                                 scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        message = "Detay sayfasına gidilemedi.",
-                                        duration = SnackbarDuration.Short
-                                    )
+                                    snackbarHostState.showSnackbar(message = "Detay sayfasına gidilemedi.", duration = SnackbarDuration.Short)
                                 }
-                            }
-                        },
-                        onFavoriTikla = { secilenUrun ->
-                            viewModel.toggleFavori(secilenUrun)
-                            // Favori durumuna göre Snackbar mesajı
-                            scope.launch {
-                                val message = if (secilenUrun.isFavorite) {
-                                    "${secilenUrun.ad} favorilerden çıkarıldı."
-                                } else {
-                                    "${secilenUrun.ad} favorilere eklendi."
-                                }
-                                snackbarHostState.showSnackbar(message = message, duration = SnackbarDuration.Short)
                             }
                         }
                     )
@@ -175,76 +166,190 @@ fun Anasayfa(
 }
 
 @Composable
-fun UrunKarti(
-    urun: Urun,
-    onSepeteEkle: (Urun) -> Unit,
-    onUrunTikla: (Urun) -> Unit,
-    onFavoriTikla: (Urun) -> Unit
-) {
-    val resimUrl = "http://kasimadalan.pe.hu/urunler/resimler/${urun.resim}"
-
-    Card(
-        modifier = Modifier.clickable { onUrunTikla(urun) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFFFE4E1))
+fun TitleRow(title: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(all = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                AsyncImage(
-                    model = resimUrl,
-                    contentDescription = urun.ad,
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = "Tümünü Gör",
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun TopSection(
+    navController: NavController,
+    searchQuery: String,
+    onSearchQueryChanged: (String) -> Unit
+) {
+
+    val filters = listOf("Önceden Gezdiklerin", "Kategoriler", "En Çok Satanlar")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        BasicTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChanged,
+            singleLine = true,
+            textStyle = TextStyle(
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            decorationBox = { innerTextField ->
+                Row(
                     modifier = Modifier
-                        .height(130.dp)
                         .fillMaxWidth()
-                        .align(Alignment.Center),
-                    contentScale = ContentScale.Fit
-                )
-                IconButton(
-                    onClick = { onFavoriTikla(urun) },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                        .height(35.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(30.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(30.dp)
+                        )
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (urun.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                        contentDescription = "Favorilere Ekle/Çıkar",
-                        tint = if (urun.isFavorite) Color(0xFFE91E63) else Color.Gray
+                        Icons.Default.Search,
+                        contentDescription = "Search",
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        innerTextField()
+
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "Ara",
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = urun.ad,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "₺${urun.fiyat}",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { onSepeteEkle(urun) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE91E63)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    Icons.Default.AddShoppingCart,
-                    contentDescription = "Sepete Ekle",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Sepete Ekle")
+        )
+
+        LazyRow(
+            modifier = Modifier.padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(filters) { filter ->
+                FilterChip(text = filter, navController = navController)
             }
         }
     }
 }
 
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BannerSection(navController: NavController) {
+    val bannerImages = listOf(R.drawable.banner1, R.drawable.banner2, R.drawable.banner3)
+    val pagerState = rememberPagerState(pageCount = { bannerImages.size })
+
+    LaunchedEffect(Unit) {
+        while(true) {
+            delay(3000L)
+            if (!pagerState.isScrollInProgress) {
+                val nextPage = (pagerState.currentPage + 1) % pagerState.pageCount
+                try { pagerState.animateScrollToPage(nextPage) } catch (e: Exception) { Log.w("Banner", "Animasyon iptal edildi.") }
+            }
+        }
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 16.dp)) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
+            BannerCard(
+                imageRes = bannerImages[page],
+                onClick = {
+                    navController.navigate("banner_detay/${bannerImages[page]}")
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            repeat(pagerState.pageCount) { index ->
+                Box(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BannerCard(imageRes: Int, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).aspectRatio(2.5f).clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Image(painter = painterResource(id = imageRes), contentDescription = "Banner Image", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FilterChip(text: String, navController: NavController) {
+    val iconColor = MaterialTheme.colorScheme.primary
+
+    AssistChip(
+        onClick = {
+            when (text) {
+                "Önceden Gezdiklerin" -> navController.navigate("history_sayfa")
+                "Kategoriler" -> navController.navigate("kategoriler_sayfa")
+                "En Çok Satanlar" -> navController.navigate("encoksatanlar_sayfa")
+            }
+        },
+        label = { Text(text) },
+        leadingIcon = {
+            when (text) {
+                "Önceden Gezdiklerin" -> Icon(Icons.Outlined.History, contentDescription = "History", tint = iconColor)
+                "Kategoriler" -> {
+                    Icon(imageVector = Icons.Filled.List, contentDescription = "Kategoriler", tint = iconColor, modifier = Modifier.size(20.dp))
+                }
+                "En Çok Satanlar" -> Icon(Icons.Filled.Star, contentDescription = "En Çok Satanlar", tint = iconColor, modifier = Modifier.size(20.dp))
+            }
+        },
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+    )
+}

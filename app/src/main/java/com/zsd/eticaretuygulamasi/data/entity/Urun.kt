@@ -10,5 +10,5 @@ data class Urun(
     @SerializedName("kategori") var kategori: String,
     @SerializedName("fiyat") var fiyat: Int,
     @SerializedName("marka") var marka: String,
-    @Transient var isFavorite: Boolean = false // @Transient: Gson/JSON işlemleri bunu görmezden gelsin
+    @Transient var isFavorite: Boolean = false
 ) : Serializable

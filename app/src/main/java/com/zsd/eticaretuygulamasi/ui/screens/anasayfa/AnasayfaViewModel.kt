@@ -4,100 +4,100 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.zsd.eticaretuygulamasi.data.entity.Urun
-import com.zsd.eticaretuygulamasi.data.repo.FavorilerRepository // FavorilerRepository importu
+import com.zsd.eticaretuygulamasi.data.repo.FavsRepository
 import com.zsd.eticaretuygulamasi.data.repo.UrunlerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update // update fonksiyonu için import
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AnasayfaViewModel @Inject constructor(
     private var urepo: UrunlerRepository,
-    private val favorilerRepo: FavorilerRepository // FavorilerRepository enjekte edildi
+    private var favsRepo: FavsRepository
 ) : ViewModel() {
+
     private val _urunListesi = MutableStateFlow<List<Urun>>(emptyList())
-    val urunListesi: StateFlow<List<Urun>> = _urunListesi
+    val urunListesi: StateFlow<List<Urun>> = _urunListesi.asStateFlow()
+
+    private var _tumUrunlerListesi = MutableStateFlow<List<Urun>>(emptyList())
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     init {
         urunleriYukle()
+        observeSearchQuery()
     }
 
     private fun urunleriYukle() {
         viewModelScope.launch {
             try {
-                // API'den ürünleri çek
-                val apiUrunler = urepo.urunleriGetir()
-                // Her ürünün favori durumunu kontrol et ve güncelle
-                val guncelUrunler = apiUrunler.map { urun ->
-                    urun.copy(isFavorite = favorilerRepo.isFavori(urun.id))
-                }
-                _urunListesi.value = guncelUrunler
+                val liste = urepo.urunleriYukle()
+                _tumUrunlerListesi.value = liste
+                _urunListesi.value = liste
             } catch (e: Exception) {
-                Log.e("AnasayfaViewModel", "Ürünler yüklenirken hata oluştu: ${e.message ?: "Bilinmeyen Hata"}", e)
+                Log.e("AnasayfaViewModel", "Ürünler yüklenemedi: ${e.message}")
+                _tumUrunlerListesi.value = emptyList()
+                _urunListesi.value = emptyList()
             }
         }
     }
 
-    // Favori durumunu değiştirme fonksiyonu
-    fun toggleFavori(urun: Urun) {
-        val yeniFavoriDurumu = favorilerRepo.toggleFavori(urun.id)
-        Log.d("AnasayfaViewModel", "${urun.ad} favori durumu değiştirildi: $yeniFavoriDurumu")
-
-        // UI'daki listeyi anında güncelle
-        _urunListesi.update { mevcutListe ->
-            mevcutListe.map {
-                if (it.id == urun.id) {
-                    it.copy(isFavorite = yeniFavoriDurumu)
+    private fun observeSearchQuery() {
+        viewModelScope.launch {
+            _searchQuery.collect { query ->
+                val filteredList = if (query.isBlank()) {
+                    _tumUrunlerListesi.value
                 } else {
-                    it
+                    _tumUrunlerListesi.value.filter {
+                        it.ad.contains(query, ignoreCase = true) ||
+                                it.marka.contains(query, ignoreCase = true) ||
+                                it.kategori.contains(query, ignoreCase = true)
+                    }
                 }
+                _urunListesi.value = filteredList
             }
         }
     }
 
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun toggleFavori(urun: Urun) {
+        viewModelScope.launch {
+            val yeniFavoriDurumu = favsRepo.toggleFavori(urun)
+            Log.d("AnasayfaViewModel", "Favori durumu değiştirildi: ${urun.ad}. Yeni Durum: $yeniFavoriDurumu")
+        }
+    }
 
     fun anasayfadanSepeteEkle(urun: Urun) {
         Log.d("AnasayfaViewModel", "anasayfadanSepeteEkle çağrıldı: Ürün adı=${urun.ad}")
         viewModelScope.launch {
             try {
                 val mevcutSepet = urepo.sepetiGetir()
-                val mevcutUrun = mevcutSepet.find { it.ad == urun.ad }
+                val mevcutUrunSepette = mevcutSepet.find { it.ad == urun.ad }
 
-                if (mevcutUrun != null) {
-                    val yeniAdet = mevcutUrun.siparisAdeti + 1
-                    Log.d("AnasayfaViewModel", "${urun.ad} sepette bulundu. Adet güncelleniyor: ${mevcutUrun.siparisAdeti} -> $yeniAdet")
-                    val silmeBasarili = urepo.sepettenSil(mevcutUrun.sepetId)
+                if (mevcutUrunSepette != null) {
+                    val yeniAdet = mevcutUrunSepette.siparisAdeti + 1
+                    Log.d("AnasayfaViewModel", "Ürün sepette bulundu. Adet güncelleniyor: ${mevcutUrunSepette.ad}, Yeni Adet: $yeniAdet")
+                    val silmeBasarili = urepo.sepettenSil(mevcutUrunSepette.sepetId)
                     if (silmeBasarili) {
-                        Log.d("AnasayfaViewModel", "Eski kayıt silindi. Yeni adetle ekleniyor...")
-                        val eklemeBasarili = urepo.sepeteEkle(
-                            urun.ad, urun.resim, urun.fiyat, urun.kategori, urun.marka, yeniAdet
-                        )
-                        if (eklemeBasarili) {
-                            Log.d("AnasayfaViewModel", "${urun.ad} adeti güncellendi.")
-                        } else {
-                            Log.e("AnasayfaViewModel", "Adet güncellenirken ekleme başarısız oldu.")
-                        }
+                        urepo.sepeteEkle(urun, yeniAdet)
                     } else {
-                        Log.e("AnasayfaViewModel", "Adet güncellenirken silme başarısız oldu.")
+                        Log.e("AnasayfaViewModel", "Sepetteki eski ürün silinemedi: ${mevcutUrunSepette.ad}")
+                        throw Exception("Sepetteki eski ürün silinemedi.")
                     }
                 } else {
-                    Log.d("AnasayfaViewModel", "${urun.ad} sepette bulunamadı. Yeni ürün olarak ekleniyor.")
-                    val eklemeBasarili = urepo.sepeteEkle(
-                        urun.ad, urun.resim, urun.fiyat, urun.kategori, urun.marka, 1
-                    )
-                    if (eklemeBasarili) {
-                        Log.d("AnasayfaViewModel", "${urun.ad} anasayfadan sepete eklendi.")
-                    } else {
-                        Log.e("AnasayfaViewModel", "Yeni ürün eklenirken hata oluştu.")
-                    }
+                    Log.d("AnasayfaViewModel", "Ürün sepette yok. Yeni ekleniyor: ${urun.ad}, Adet: 1")
+                    urepo.sepeteEkle(urun, 1)
                 }
             } catch (e: Exception) {
-                Log.e("AnasayfaViewModel", "Anasayfadan sepete eklerken genel hata: ${e.message ?: "Bilinmeyen Hata"}", e)
+                Log.e("AnasayfaViewModel", "Sepete eklenirken/güncellenirken hata: ${e.message}", e)
             }
         }
     }
 }
-

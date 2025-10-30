@@ -10,27 +10,50 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PinkGrey80,
-    tertiary = Pink80
+    primary = PinkStrong_Dark,
+    onPrimary = DarkPlum_Dark,
+    primaryContainer = PinkLight_Dark,
+    onPrimaryContainer = DarkPlum_Dark,
+    secondary = PinkMedium_Dark,
+    onSecondary = DarkPlum_Dark,
+    tertiary = PinkMediumLight_Dark,
+    onTertiary = DarkPlum_Dark,
+    background = DarkPlum_Dark,
+    onBackground = PinkLight_Dark,
+    surface = DarkPlum_Dark,
+    onSurface = PinkLight_Dark,
+    surfaceVariant = PinkLight_Dark,
+    onSurfaceVariant = DarkPlum_Dark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PinkGrey40,
-    tertiary = Pink40
+    primary = PinkStrong,
+    onPrimary = Color.White,
+    primaryContainer = PinkLight,
+    onPrimaryContainer = DarkPlum,
+    secondary = PinkMedium,
+    onSecondary = DarkPlum,
+    tertiary = PinkMediumLight,
+    onTertiary = DarkPlum,
+    background = Color.White,
+    onBackground = DarkPlum,
+    surface = Color.White,
+    onSurface = DarkPlum,
+    surfaceVariant = PinkLight,
+    onSurfaceVariant = DarkPlum
 )
 
 @Composable
-fun EticaretUygulamasiTheme(
+fun ETicaretUygulamasiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -38,6 +61,7 @@ fun EticaretUygulamasiTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -46,7 +70,7 @@ fun EticaretUygulamasiTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

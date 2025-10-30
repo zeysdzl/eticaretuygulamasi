@@ -7,21 +7,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.zsd.eticaretuygulamasi.navigation.NavGraph
-import com.zsd.eticaretuygulamasi.ui.theme.EticaretUygulamasiTheme
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.zsd.eticaretuygulamasi.ui.screens.MainScreen
+import com.zsd.eticaretuygulamasi.ui.theme.ETicaretUygulamasiTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent {
-            EticaretUygulamasiTheme {
+            ETicaretUygulamasiTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NavGraph()
+                    MainScreen()
                 }
             }
         }
